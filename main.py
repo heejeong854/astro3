@@ -36,16 +36,16 @@ if uploaded_file is not None:
             st.write("### FITS 파일 구조")
             hdul.info()  # 파일 구조 출력
             
-            # 모든 HDU를 체크
-            data_found = False
-            for i, hdu in enumerate(hdu):
+            # 2D 데이터가 있는 HDU 찾기
+            data = None
+            header = None
+            for i, hdu in enumerate(hdul):
                 if hdu.data is not None and hdu.data.ndim == 2:
                     data = hdu.data
                     header = hdu.header
-                    data_found = True
                     break
             
-            if data_found:
+            if data is not None:
                 st.image(data, caption=f"HDU {i} 이미지", use_column_width=True)
                 st.write(f"### HDU {i} 헤더 정보")
                 st.write(dict(header))
