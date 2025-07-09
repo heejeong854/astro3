@@ -33,20 +33,24 @@ if uploaded_file is not None:
         
         # FITS 파일 열기
         with fits.open(file_obj) as hdul:
-            data = hdul[0].data
-            header = hdul[0].header
-        
-        if data is not None:
-            if data.ndim == 2:
-                st.image(data, caption="FITS 이미지", use_column_width=True)
-            else:
-                st.warning(f"데이터 차원: {data.ndim}D. 2D 이미지만 표시 가능합니다.")
+            st.write("### FITS 파일 구조")
+            hdul.info()  # 파일 구조 출력
             
-            st.write("### FITS 헤더 정보")
-            st.write(dict(header))
+            # 모든 HDU를 체크
+            data_found = False
+            for i, hdu in enumerate(hdu):
+                if hdu.data is not None and hdu.data.ndim == 2:
+                    data = hdu.data
+                    header = hdu.header
+                    data_found = True
+                    break
             
-            # 등급 계산 (2D 데이터만 처리)
-            if data.ndim == 2:
+            if data_found:
+                st.image(data, caption=f"HDU {i} 이미지", use_column_width=True)
+                st.write(f"### HDU {i} 헤더 정보")
+                st.write(dict(header))
+                
+                # 등급 계산
                 apparent_mag, absolute_mag = calculate_magnitudes(data, distance)
                 if apparent_mag is not None:
                     st.success(f"겉보기 등급: {apparent_mag:.2f}")
@@ -54,11 +58,9 @@ if uploaded_file is not None:
                 else:
                     st.error("유효한 거리 값을 입력하세요.")
             else:
-                st.warning("2D 데이터가 아니므로 등급 계산을 생략합니다.")
-        else:
-            st.error("FITS 데이터가 존재하지 않습니다.")
+                st.error("2D 이미지 데이터를 포함한 HDU를 찾을 수 없습니다.")
         
-        # 원본 FITS 다운로드 (파일 복사본 사용)
+        # 원본 FITS 다운로드
         st.download_button(
             label="원본 FITS 다운로드",
             data=file_content,
