@@ -1,6 +1,7 @@
 import streamlit as st
 from astropy.io import fits
 import numpy as np
+import io
 
 # 제목
 st.title("FITS에서 등급 계산기")
@@ -26,30 +27,41 @@ def calculate_magnitudes(data, distance):
 # FITS 처리 및 계산
 if uploaded_file is not None:
     try:
-        # 업로드된 파일을 임시로 열기
-        with fits.open(uploaded_file) as hdul:
+        # 파일 데이터를 메모리에 복사
+        file_content = uploaded_file.read()
+        file_obj = io.BytesIO(file_content)
+        
+        # FITS 파일 열기
+        with fits.open(file_obj) as hdul:
             data = hdul[0].data
             header = hdul[0].header
         
-        if data is not None and data.ndim == 2:
-            st.image(data, caption="FITS 이미지", use_column_width=True)
+        if data is not None:
+            if data.ndim == 2:
+                st.image(data, caption="FITS 이미지", use_column_width=True)
+            else:
+                st.warning(f"데이터 차원: {data.ndim}D. 2D 이미지만 표시 가능합니다.")
+            
             st.write("### FITS 헤더 정보")
             st.write(dict(header))
             
-            # 등급 계산
-            apparent_mag, absolute_mag = calculate_magnitudes(data, distance)
-            if apparent_mag is not None:
-                st.success(f"겉보기 등급: {apparent_mag:.2f}")
-                st.success(f"절대 등급: {absolute_mag:.2f}")
+            # 등급 계산 (2D 데이터만 처리)
+            if data.ndim == 2:
+                apparent_mag, absolute_mag = calculate_magnitudes(data, distance)
+                if apparent_mag is not None:
+                    st.success(f"겉보기 등급: {apparent_mag:.2f}")
+                    st.success(f"절대 등급: {absolute_mag:.2f}")
+                else:
+                    st.error("유효한 거리 값을 입력하세요.")
             else:
-                st.error("유효한 거리 값을 입력하세요.")
+                st.warning("2D 데이터가 아니므로 등급 계산을 생략합니다.")
         else:
-            st.error("유효한 2D FITS 이미지가 아닙니다.")
+            st.error("FITS 데이터가 존재하지 않습니다.")
         
-        # 원본 FITS 다운로드
+        # 원본 FITS 다운로드 (파일 복사본 사용)
         st.download_button(
             label="원본 FITS 다운로드",
-            data=uploaded_file.getvalue(),
+            data=file_content,
             file_name=uploaded_file.name,
             mime="application/fits"
         )
