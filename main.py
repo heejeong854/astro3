@@ -1,6 +1,17 @@
 import streamlit as st
-from astropy.io import fits
+
 import numpy as np
+
+from astropy.io import fits
+
+from PIL import Image
+
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+
+from astropy.time import Time
+
+from datetime import datetime
+
 
 # 제목
 st.title("FITS에서 등급 계산기")
