@@ -1,16 +1,31 @@
 import streamlit as st
-
 import numpy as np
-
 from astropy.io import fits
-
 from PIL import Image
-
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
-
 from astropy.time import Time
-
 from datetime import datetime
+import matplotlib.pyplot as plt
+
+# 파일 경로 (압축된 fits.fz 파일)
+fits_fz_file = 'M13_ori.fits.fz'
+
+# 1) 압축된 fits.fz 파일 열기 (astropy가 자동으로 압축 해제해줌)
+hdul = fits.open(fits_fz_file)
+image_data = hdul[0].data  # 이미지 데이터 가져오기
+hdul.close()
+
+# 2) 이미지 데이터가 음수나 너무 큰 값 있으면 적당히 정규화 (예: 0~255 스케일로 변환)
+# 여기서는 간단히 최소/최대값 스케일링
+img_norm = (image_data - np.min(image_data)) / (np.max(image_data) - np.min(image_data))
+img_8bit = (img_norm * 255).astype(np.uint8)
+
+# 3) PIL 이미지로 변환
+img_pil = Image.fromarray(img_8bit)
+
+# 4) Streamlit에 이미지 출력
+st.image(img_pil, caption='M13_ori.fits.fz image', use_column_width=True)
+
 
 
 # 제목
