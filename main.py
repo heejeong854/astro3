@@ -6,38 +6,30 @@ import matplotlib.pyplot as plt
 from astropy.visualization import ZScaleInterval
 
 # 제목
-st.title("FITS에서 등급 계산기")
+st.title("FITS에서 겉보기 등급 계산기")
 
 # FITS 이미지 업로드
 uploaded_file = st.file_uploader("FITS 이미지를 업로드하세요", type=["fits", "fits.fz"])
 
-# 사용자 입력
-distance = st.number_input("천체까지의 거리 (광년)", value=0.0, step=1.0, min_value=0.0)
-
-# 등급 계산 함수
-def calculate_magnitudes(data, distance):
-    if data is not None and distance > 0:
+# 등급 계산 함수 (겉보기 등급만)
+def calculate_apparent_magnitude(data):
+    if data is not None and np.any(data > 0):
         mean_flux = np.mean(data[data > 0])  # 0 이상인 데이터만 사용
         reference_flux = 3.64e-8  # Vega 0등급의 대략적인 플럭스 (W/m²)
         apparent_magnitude = -2.5 * np.log10(mean_flux / reference_flux)
-        distance_parsecs = distance / 3.262
-        distance_modulus = 5 * np.log10(distance_parsecs / 10)
-        absolute_magnitude = apparent_magnitude - distance_modulus
-        return apparent_magnitude, absolute_magnitude
-    return None, None
+        return apparent_magnitude
+    return None
 
 # FITS 이미지 시각화 함수
 def display_fits_image(data):
-    # ZScaleInterval을 사용한 데이터 정규화
     zscale = ZScaleInterval()
     vmin, vmax = zscale.get_limits(data)
     norm_data = 255 * (data - vmin) / (vmax - vmin)
     norm_data = np.clip(norm_data, 0, 255).astype(np.uint8)
 
-    # Matplotlib으로 이미지 렌더링
     fig, ax = plt.subplots()
     ax.imshow(norm_data, cmap='gray', origin='lower')
-    ax.axis('off')  # 축 숨기기
+    ax.axis('off')
     st.pyplot(fig)
 
 # FITS 처리 및 계산
@@ -76,13 +68,12 @@ if uploaded_file is not None:
                 st.write(f"### HDU {i} 헤더 정보")
                 st.write(dict(header))
                 
-                # 등급 계산
-                apparent_mag, absolute_mag = calculate_magnitudes(data, distance)
-                if apparent_mag is not None and absolute_mag is not None:
-                    st.success(f"**겉보기 등급**: {apparent_magnitude:.2f}")
-                    st.success(f"**절대 등급**: {absolute_magnitude:.2f}")
+                # 겉보기 등급 계산
+                apparent_mag = calculate_apparent_magnitude(data)
+                if apparent_mag is not None:
+                    st.success(f"**겉보기 등급**: {apparent_mag:.2f}")
                 else:
-                    st.error("유효한 거리 값을 입력하세요 (0보다 큰 값).")
+                    st.error("데이터를 기반으로 등급을 계산할 수 없습니다.")
             else:
                 st.error("2D 이미지 데이터를 포함한 HDU를 찾을 수 없습니다.")
         
@@ -96,7 +87,7 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"FITS 파일 처리 중 오류 발생: {str(e)}")
 else:
-    st.write("FITS 이미지를 업로드하면 등급을 계산합니다.")
+    st.write("FITS 이미지를 업로드하면 겉보기 등급을 계산합니다.")
 
 # 참고 설명
 st.write("""
