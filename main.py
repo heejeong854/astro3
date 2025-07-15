@@ -71,6 +71,7 @@ if uploaded_file is not None:
                 # 겉보기 등급 계산
                 apparent_mag = calculate_apparent_magnitude(data)
                 if apparent_mag is not None:
+                    # 과학적 표기법 대신 고정 소수점 2자리로 출력
                     st.success(f"**겉보기 등급**: {apparent_mag:.2f}")
                 else:
                     st.error("데이터를 기반으로 등급을 계산할 수 없습니다.")
